@@ -9,9 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@solana/web3.js": "^1.98.1",
+    "bip39": "^3.1.0",
+    "micro-ed25519-hdkey": "^0.1.2",
+    "next": "15.3.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.3.1"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "typescript": "^5",
