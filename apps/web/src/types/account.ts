@@ -7,6 +7,13 @@ export interface KeyPair {
   address: string;
 }
 
+export interface DerivationKey {
+  salt: Uint8Array<ArrayBuffer>;
+  iv:Uint8Array<ArrayBuffer>;
+  iterations: number;
+  keylen: number;
+  derivationKey:CryptoKey
+}
 //account is a group of keypairs/wallets
 export interface Account {
   id: string; // uuid
