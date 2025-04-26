@@ -1,5 +1,42 @@
-"use client";
 import { DerivationKey } from "@/types/account";
+
+export async function generateDerivationKey(password: string) {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for AES-GCM
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100_000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    {
+      name: "AES-GCM",
+      length: 256,
+    },
+    true,
+    ["encrypt"]
+  );
+  const derivationKeyObject: DerivationKey = {
+    salt,
+    iv,
+    derivationKey: key,
+    iterations: 100_000,
+    keylen: 256,
+  };
+  return derivationKeyObject;
+}
+
 export async function encrypt(password: string, text: string) {
   const encoder = new TextEncoder();
 
