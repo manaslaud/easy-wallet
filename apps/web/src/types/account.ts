@@ -1,6 +1,6 @@
 //keypair is called a wallet
 export interface KeyPair {
-  publicKey: string; // base58 encoded
+  publicKey: string; // hex encoded for solana and compressed ethereum public key 
   privateKey: string; // encrypted
   derivationPath: string;
   chain: "solana" | "ethereum";
