@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { ethers } from "ethers";
-import { mnemonicToSeedSync } from "../bip39";
 import { KeyPair } from "@/types/account";
 import { encrypt } from "../encryption";
 import { _BASE_ETHEREUM_WALLET_PATH } from "@/constants/wallet";
