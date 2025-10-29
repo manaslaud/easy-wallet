@@ -144,6 +144,42 @@ export async function decrypt(
   }
 }
 
+// -------- Convenience helpers to pack/unpack encryption metadata into a string --------
+// Format: v1:<saltHex>:<ivHex>:<cipherHex>
+const PACK_VERSION = "v1";
+
+export function packEncryptedPayload(params: {
+  cipherHex: string;
+  salt: Uint8Array;
+  iv: Uint8Array;
+}): string {
+  const saltHex = arrayBufferToHex(params.salt.buffer);
+  const ivHex = arrayBufferToHex(params.iv.buffer);
+  return `${PACK_VERSION}:${saltHex}:${ivHex}:${params.cipherHex}`;
+}
+
+export function unpackEncryptedPayload(packed: string): {
+  cipherHex: string;
+  salt: Uint8Array;
+  iv: Uint8Array;
+} {
+  const parts = packed.split(":");
+  if (parts.length !== 4 || parts[0] !== PACK_VERSION) {
+    throw new Error("Unsupported encrypted payload format");
+  }
+  const [, saltHex, ivHex, cipherHex] = parts;
+  return {
+    cipherHex,
+    salt: new Uint8Array(hexToArrayBuffer(saltHex)),
+    iv: new Uint8Array(hexToArrayBuffer(ivHex)),
+  };
+}
+
+export async function decryptPacked(password: string, packed: string): Promise<string> {
+  const { cipherHex, salt, iv } = unpackEncryptedPayload(packed);
+  return await decrypt(password, cipherHex, salt, iv);
+}
+
 export async function isPasswordCorrect(
   password: string,
   encryptedHex: string,

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { ethers } from "ethers";
 import { KeyPair } from "@/types/account";
-import { encrypt } from "../encryption";
+import { encrypt, packEncryptedPayload } from "../encryption";
 import { _BASE_ETHEREUM_WALLET_PATH } from "@/constants/wallet";
 
 //creating the base keys
@@ -15,7 +15,12 @@ export async function createBaseEthereumKeys(
     ethersCompatibleMnemonic,
     _BASE_ETHEREUM_WALLET_PATH
   );
-  const encryptedPvtKey = (await encrypt(passowrd, wallet.privateKey)).res;
+  const enc = await encrypt(passowrd, wallet.privateKey);
+  const encryptedPvtKey = packEncryptedPayload({
+    cipherHex: enc.res,
+    salt: enc.DK.salt,
+    iv: enc.DK.iv,
+  });
   const keypair: KeyPair = {
     publicKey: wallet.publicKey,
     privateKey: encryptedPvtKey, // encrypted

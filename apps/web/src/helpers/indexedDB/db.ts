@@ -5,14 +5,14 @@ const db = new Dexie("EasyWallet") as Dexie & {
   derivationKey: EntityTable<DerivationKey>;
   account: EntityTable<Account>;
   keyPair: EntityTable<KeyPair>;
-  encryptedMnemonic: EntityTable<string>; 
+  encryptedMnemonic: EntityTable<{ id: string; value: string }>;
 };
 
 db.version(1).stores({
-  derivationKey: "&id", // primary key has a default value = "default"
-  account: "&id, createdAt", // Primary key is `id`, and we can index `createdAt` if needed
-  keyPair: "&address, chain, derivationPath", // Primary key is `address`, indexed by `chain` and `derivationPath`
-  encryptedMnemonic: "&id", // primary key has a default value = "default"
+  derivationKey: "&id",
+  account: "&id, createdAt",
+  keyPair: "&address, chain, derivationPath",
+  encryptedMnemonic: "&id",
 });
 
 export {db};
