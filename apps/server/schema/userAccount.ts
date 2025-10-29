@@ -4,7 +4,7 @@ import { KeyPairSchema } from './keyPair';
 export const AccountSchema = z.object({
   id: z.string().uuid(), // UUID string
   keyPairs: z.array(KeyPairSchema), // Array of KeyPair
-  createdAt: z.date(), // Date object
+  createdAt: z.coerce.date(), // Accept string/Date and coerce to Date
   solanaKeyPairs: z.number().int().nonnegative(), // Non-negative integer
   ethereumKeyPairs: z.number().int().nonnegative(), // Non-negative integer
 });

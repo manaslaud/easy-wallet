@@ -10,15 +10,15 @@ export const createUserAccount = async function (
 ): Promise<void> {
   try {
     const prisma = new PrismaClient();
-    const { userAcc }: { userAcc: Account } = req.body;
-    AccountSchema.parse(userAcc);
+    const { userAcc }: { userAcc: unknown } = req.body;
+    const safe = AccountSchema.parse(userAcc);
     await prisma.userAccount.create({
       data: {
-        id: userAcc.id,
-        KeyPairs: userAcc.keyPairs,
-        createdAt: userAcc.createdAt,
-        solanaKeyPairs: userAcc.solanaKeyPairs,
-        ethrereKeyPairs: userAcc.ethereumKeyPairs,
+        id: safe.id,
+        KeyPairs: safe.keyPairs, // contains ONLY public fields per schema
+        createdAt: safe.createdAt,
+        solanaKeyPairs: safe.solanaKeyPairs,
+        ethrereKeyPairs: safe.ethereumKeyPairs,
       },
     });
     res.status(201).json({ message: "Account added successfully" });

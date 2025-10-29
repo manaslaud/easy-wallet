@@ -14,6 +14,10 @@ import { getSolanaBalance } from "@/helpers/getSolanaBalance";
 import { Section } from "@/components/Section";
 import { Button } from "@/components/Button";
 import { KeyPairCard } from "@/components/KeyPairCard";
+import { saveAccountPublic } from "@/helpers/saveAccountToServer";
+import { listContacts as apiListContacts, createContact as apiCreateContact } from "@/helpers/contacts";
+import type { Contact } from "@/types/contact";
+import Contacts from "@/components/Contacts";
 
 export default function Home() {
   const [label, setLabel] = useState("");
@@ -33,6 +37,7 @@ export default function Home() {
   const [ethereumNet, setEthereumNet] = useState<"sepolia" | "mainnet">("sepolia");
   const [ethereumRpcUrl, setEthereumRpcUrl] = useState<string>("");
   const [balances, setBalances] = useState<Record<string, { sol?: { lamports: number; sol: number }; eth?: { ether: string } }>>({});
+  const [contacts, setContacts] = useState<Record<string, Contact[]>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -66,12 +71,38 @@ export default function Home() {
     })();
   }, [selectedAccount, solanaNet, ethereumNet, ethereumRpcUrl]);
 
+  // Load contacts when account or network changes
+  useEffect(() => {
+    const acct = selectedAccount;
+    if (!acct) return;
+    (async () => {
+      const entries: Array<{ key: string; list: Contact[] }> = [];
+      try {
+        const keySol = `${acct.id}|solana|${solanaNet}`;
+        const listSol = await apiListContacts({ userAccountId: acct.id, chain: "solana", network: solanaNet });
+        entries.push({ key: keySol, list: listSol });
+      } catch {}
+      try {
+        const keyEth = `${acct.id}|ethereum|${ethereumNet}`;
+        const listEth = await apiListContacts({ userAccountId: acct.id, chain: "ethereum", network: ethereumNet });
+        entries.push({ key: keyEth, list: listEth });
+      } catch {}
+      setContacts((prev) => {
+        const next = { ...prev };
+        for (const e of entries) next[e.key] = e.list;
+        return next;
+      });
+    })();
+  }, [selectedAccount, solanaNet, ethereumNet]);
+
   const onCreate = useCallback(async () => {
     if (!password || !label) return;
     setIsCreating(true);
     try {
       const account = await createBaseAccount(password, label);
       await upsertAccount(account);
+      // Persist public metadata to server (no private keys)
+      void saveAccountPublic(account);
       setAccounts((prev) => [account, ...prev]);
       setLabel("");
       setPassword("");
@@ -250,6 +281,12 @@ export default function Home() {
                   resultLabel="Signature"
                   result={txState[`${selectedAccount.id}-sol`]?.result}
                   error={txState[`${selectedAccount.id}-sol`]?.error}
+                  contacts={contacts[`${selectedAccount.id}|solana|${solanaNet}`]?.map((c) => ({ id: c.id, label: c.label, address: c.address }))}
+                  onSaveContact={async (label, address) => {
+                    await apiCreateContact({ userAccountId: selectedAccount.id, chain: "solana", network: solanaNet, address, label });
+                    const list = await apiListContacts({ userAccountId: selectedAccount.id, chain: "solana", network: solanaNet });
+                    setContacts((prev) => ({ ...prev, [`${selectedAccount.id}|solana|${solanaNet}`]: list }));
+                  }}
                 />
               </div>
               <div className="grid gap-3">
@@ -261,10 +298,35 @@ export default function Home() {
                   resultLabel="Tx Hash"
                   result={txState[`${selectedAccount.id}-eth`]?.result}
                   error={txState[`${selectedAccount.id}-eth`]?.error}
+                  contacts={contacts[`${selectedAccount.id}|ethereum|${ethereumNet}`]?.map((c) => ({ id: c.id, label: c.label, address: c.address }))}
+                  onSaveContact={async (label, address) => {
+                    await apiCreateContact({ userAccountId: selectedAccount.id, chain: "ethereum", network: ethereumNet, address, label });
+                    const list = await apiListContacts({ userAccountId: selectedAccount.id, chain: "ethereum", network: ethereumNet });
+                    setContacts((prev) => ({ ...prev, [`${selectedAccount.id}|ethereum|${ethereumNet}`]: list }));
+                  }}
                 />
               </div>
             </div>
           )}
+        </Section>
+      )}
+
+      {selectedAccount && (
+        <Section title="Contacts" subtitle="Create and view contacts per chain and network">
+          <div className="grid md:grid-cols-2 gap-4">
+            <Contacts
+              title="Solana contacts"
+              userAccountId={selectedAccount.id}
+              chain="solana"
+              network={solanaNet}
+            />
+            <Contacts
+              title="Ethereum contacts"
+              userAccountId={selectedAccount.id}
+              chain="ethereum"
+              network={ethereumNet}
+            />
+          </div>
         </Section>
       )}
 

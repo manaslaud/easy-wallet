@@ -20,4 +20,19 @@ model UserAccount {
   solanaKeyPairs  Int
   ethrereKeyPairs Int
   KeyPairs        Json
+  contacts        Contact[]
+}
+
+model Contact {
+  id             String      @id @default(uuid())
+  createdAt      DateTime    @default(now())
+  userAccountId  String
+  userAccount    UserAccount @relation(fields: [userAccountId], references: [id], onDelete: Cascade)
+  chain          String      // 'solana' | 'ethereum'
+  network        String      // e.g. 'devnet' | 'testnet' | 'mainnet-beta' | 'sepolia' | 'mainnet'
+  address        String
+  label          String
+
+  @@index([userAccountId])
+  @@unique([userAccountId, chain, network, address])
 }

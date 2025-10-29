@@ -3,6 +3,9 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun run index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/express": "^5.0.1"
@@ -13,6 +16,8 @@
   "dependencies": {
     "@prisma/client": "^6.7.0",
     "@types/pg": "^8.11.14",
+    "@solana/web3.js": "^1.95.4",
+    "ethers": "^6.13.4",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "pg": "^8.15.6",

@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import { createSolanaConnection } from "@/helpers/createSolanaConnection";
+import { createSolanaConnection } from "./createSolanaConnection";
 
 export async function getSolanaBalance(
   address: string,
