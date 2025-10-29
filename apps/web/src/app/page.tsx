@@ -7,7 +7,7 @@ import { listAccounts, upsertAccount } from "@/helpers/indexedDB/storage";
 import { sendEthereumTransaction } from "@/helpers/ethereum/sendEthereumTransaction";
 import { sendSolanaTransaction } from "@/helpers/sendSolanaTransaction";
 import { AccountSelector } from "@/components/AccountSelector";
-import { CopyButton } from "@/components/CopyButton";
+import TransferForm from "@/components/TransferForm";
 import { EthereumNetworkSelector, SolanaNetworkSelector } from "@/components/NetworkSelectors";
 import { getEthereumBalance } from "@/helpers/getEthereumBalance";
 import { getSolanaBalance } from "@/helpers/getSolanaBalance";
@@ -178,13 +178,13 @@ export default function Home() {
             </div>
             <div className="grid gap-2 md:col-span-2">
               <label className="text-sm">Password</label>
-              <input
+              <Input
                 type="password"
                 required
-                className="border border-gray-300 rounded p-2"
                 placeholder="Enter a strong password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={setPassword}
+                autoComplete="new-password"
               />
             </div>
           </div>
@@ -225,12 +225,14 @@ export default function Home() {
             <div className="grid md:grid-cols-3 gap-3">
               <div className="md:col-span-2 grid gap-2">
                 <label className="text-sm">Wallet password</label>
-                <input
+                <Input
                   type="password"
-                  className="border border-gray-300 rounded p-2"
                   placeholder="Password to decrypt keys"
                   value={unlockPasswordById[selectedAccount.id] || ""}
-                  onChange={(e) => setUnlockPasswordById((prev) => ({ ...prev, [selectedAccount.id]: e.target.value }))}
+                  onChange={(val) =>
+                    setUnlockPasswordById((prev) => ({ ...prev, [selectedAccount.id]: val }))
+                  }
+                  autoComplete="current-password"
                 />
               </div>
               <div className="flex items-end">
@@ -267,9 +269,9 @@ export default function Home() {
       )}
 
       {accounts.length > 1 && (
-        <Section title="Previous accounts" subtitle="Accounts created this session">
+        <Section title="All accounts" subtitle="Accounts created by you.">
           <div className="grid gap-3">
-            {accounts.slice(1).map((acct) => (
+            {accounts.map((acct) => (
               <div key={acct.id} className="rounded-xl border border-zinc-800/70 bg-white/5 dark:bg-black/20 backdrop-blur p-4">
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{acct.label}</div>
@@ -284,55 +286,3 @@ export default function Home() {
     </main>
   );
 }
-
-function TransferForm({
-  title,
-  onSubmit,
-  pending,
-  resultLabel,
-  result,
-  error,
-}: {
-  title: string;
-  onSubmit: (to: string, amount: string) => void;
-  pending: boolean;
-  resultLabel: string;
-  result?: string;
-  error?: string;
-}) {
-  const [to, setTo] = useState("");
-  const [amount, setAmount] = useState("");
-  return (
-    <div className="grid gap-2">
-      <div className="font-medium">{title}</div>
-      <input
-        type="text"
-        className="border border-gray-300 rounded p-2"
-        placeholder="Recipient address"
-        value={to}
-        onChange={(e) => setTo(e.target.value)}
-      />
-      <input
-        type="text"
-        className="border border-gray-300 rounded p-2"
-        placeholder="Amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
-      <button
-        disabled={!to || !amount || pending}
-        onClick={() => onSubmit(to, amount)}
-        className="px-3 py-2 rounded bg-black text-white disabled:opacity-50 w-fit"
-      >
-        {pending ? "Sending..." : "Send"}
-      </button>
-      {result && (
-        <div className="text-xs text-green-500 break-all">
-          {resultLabel}: {result}
-        </div>
-      )}
-      {error && <div className="text-xs text-red-500 break-all">{error}</div>}
-    </div>
-  );
-}
-
