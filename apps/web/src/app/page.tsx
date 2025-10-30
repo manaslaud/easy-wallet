@@ -18,6 +18,7 @@ import { saveAccountPublic } from "@/helpers/saveAccountToServer";
 import { listContacts as apiListContacts, createContact as apiCreateContact } from "@/helpers/contacts";
 import type { Contact } from "@/types/contact";
 import Contacts from "@/components/Contacts";
+import Chat from "@/components/Chat";
 
 export default function Home() {
   const [label, setLabel] = useState("");
@@ -310,6 +311,47 @@ export default function Home() {
           )}
         </Section>
       )}
+
+      <Section title="Assistant" subtitle="Ask questions and get guidance in natural language">
+        <Chat
+          selectedAccount={selectedAccount}
+          solanaNet={solanaNet}
+          ethereumNet={ethereumNet}
+          canSend={selectedAccount ? !!isUnlockedById[selectedAccount.id] : false}
+          sendEth={selectedAccount ? async (to, amount) => {
+            const acct = selectedAccount;
+            const pwd = unlockPasswordById[acct.id];
+            const kp = acct.keyPairs.find((k) => k.chain === "ethereum");
+            if (!pwd || !kp) throw new Error("Wallet locked or no ETH key");
+            const { sendEthereumTransaction } = await import("@/helpers/ethereum/sendEthereumTransaction");
+            const res = await sendEthereumTransaction({
+              password: pwd,
+              packedEncryptedPrivateKey: kp.privateKey,
+              toAddress: to,
+              amountEther: amount,
+              network: ethereumNet,
+              rpcUrl: ethereumRpcUrl || undefined,
+            });
+            return res.hash;
+          } : undefined}
+          sendSol={selectedAccount ? async (to, amount) => {
+            const acct = selectedAccount;
+            const pwd = unlockPasswordById[acct.id];
+            const kp = acct.keyPairs.find((k) => k.chain === "solana");
+            if (!pwd || !kp) throw new Error("Wallet locked or no SOL key");
+            const { sendSolanaTransaction } = await import("@/helpers/sendSolanaTransaction");
+            const lamports = Math.floor(parseFloat(amount) * 1_000_000_000);
+            const res = await sendSolanaTransaction({
+              password: pwd,
+              packedEncryptedPrivateKey: kp.privateKey,
+              toAddressBase58: to,
+              lamports,
+              network: solanaNet,
+            });
+            return res.signature;
+          } : undefined}
+        />
+      </Section>
 
       {selectedAccount && (
         <Section title="Contacts" subtitle="Create and view contacts per chain and network">

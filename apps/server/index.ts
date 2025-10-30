@@ -6,6 +6,7 @@ import { getSolanaBalance } from './controllers/getSolanaBalanceController';
 import { getEthereumBalance } from './controllers/getEthereumBalanceController';
 import { createContact } from './controllers/createContactController';
 import { listContacts } from './controllers/listContactsController';
+import { chat } from './controllers/chatController';
 
 const app: Express = express();
 const port = process.env.PORT || 8000;
@@ -40,6 +41,7 @@ router.get("/balances/solana", getSolanaBalance);
 router.get("/balances/ethereum", getEthereumBalance);
 router.post("/contacts", createContact);
 router.get("/contacts", listContacts);
+router.post("/chat", chat);
 
 app.use("/api", router);
 
