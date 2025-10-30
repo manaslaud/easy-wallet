@@ -28,6 +28,8 @@ export const createContact = async function (
     });
     res.status(201).json(created);
   } catch (e: any) {
+    // Log full error for debugging
+    console.error("[createContact] Error:", e);
     if (e instanceof ZodError) {
       res.status(400).json({ error: e.message });
       return;

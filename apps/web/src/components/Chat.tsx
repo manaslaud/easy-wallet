@@ -16,6 +16,8 @@ export default function Chat({ selectedAccount, solanaNet, ethereumNet, canSend,
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pendingSend, setPendingSend] = useState<null | { chain: "solana" | "ethereum"; to: string; amount: string }>(null);
+  const [confirming, setConfirming] = useState(false);
 
   const context = useMemo(() => {
     const acct = selectedAccount;
@@ -88,20 +90,8 @@ export default function Chat({ selectedAccount, solanaNet, ethereumNet, canSend,
         } else if (!chain || !to || !amount) {
           lines.push("Missing chain/to/amount.");
         } else {
-          lines.push("Sending transaction...");
-          try {
-            if (chain === "ethereum" && sendEth) {
-              const hash = await sendEth(to, amount);
-              lines.push(`Sent. Tx: ${hash}`);
-            } else if (chain === "solana" && sendSol) {
-              const sig = await sendSol(to, amount);
-              lines.push(`Sent. Signature: ${sig}`);
-            } else {
-              lines.push("Unsupported chain.");
-            }
-          } catch (err: any) {
-            lines.push(`Send failed: ${err?.message || String(err)}`);
-          }
+          lines.push("Review and confirm the transaction in the modal.");
+          setPendingSend({ chain, to, amount });
         }
       }
       setMessages((prev) => [...prev, { role: "assistant", content: lines.filter(Boolean).join("\n") }]);
@@ -145,6 +135,57 @@ export default function Chat({ selectedAccount, solanaNet, ethereumNet, canSend,
           {busy ? "Sending..." : "Send"}
         </button>
       </div>
+
+      {pendingSend && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50">
+          <div className="w-[min(92vw,520px)] rounded-xl border border-zinc-800 bg-zinc-950 text-white p-5 grid gap-4 shadow-xl">
+            <div className="text-lg font-semibold">Confirm transaction</div>
+            <div className="grid gap-2 text-sm">
+              <div className="flex items-center justify-between"><span className="text-zinc-400">Chain</span><span className="font-mono">{pendingSend.chain}</span></div>
+              <div className="flex items-center justify-between"><span className="text-zinc-400">Amount</span><span className="font-mono">{pendingSend.amount}</span></div>
+              <div className="grid gap-1">
+                <span className="text-zinc-400">Recipient</span>
+                <span className="font-mono break-all">{pendingSend.to}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                className="px-3 py-2 rounded border border-zinc-700 text-zinc-300"
+                disabled={confirming}
+                onClick={() => setPendingSend(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-3 py-2 rounded bg-white text-black disabled:opacity-50"
+                disabled={confirming}
+                onClick={async () => {
+                  if (!pendingSend) return;
+                  setConfirming(true);
+                  try {
+                    if (pendingSend.chain === "ethereum" && sendEth) {
+                      const hash = await sendEth(pendingSend.to, pendingSend.amount);
+                      setMessages((prev) => [...prev, { role: "assistant", content: `Sent. Tx: ${hash}` }]);
+                    } else if (pendingSend.chain === "solana" && sendSol) {
+                      const sig = await sendSol(pendingSend.to, pendingSend.amount);
+                      setMessages((prev) => [...prev, { role: "assistant", content: `Sent. Signature: ${sig}` }]);
+                    } else {
+                      setMessages((prev) => [...prev, { role: "assistant", content: "Unsupported chain." }]);
+                    }
+                  } catch (err: any) {
+                    setMessages((prev) => [...prev, { role: "assistant", content: `Send failed: ${err?.message || String(err)}` }]);
+                  } finally {
+                    setConfirming(false);
+                    setPendingSend(null);
+                  }
+                }}
+              >
+                {confirming ? "Sending..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

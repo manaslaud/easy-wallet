@@ -14,12 +14,17 @@ export const listContacts = async function (
       res.status(400).json({ error: "Missing userAccountId, chain, or network" });
       return;
     }
+    if (chain !== "solana" && chain !== "ethereum") {
+      res.status(400).json({ error: "Invalid chain" });
+      return;
+    }
     const contacts = await prisma.contact.findMany({
       where: { userAccountId, chain, network },
       orderBy: { createdAt: "desc" },
     });
     res.status(200).json(contacts);
-  } catch {
+  } catch (e) {
+    console.error("[listContacts] Error:", e);
     res.status(500).json({ error: "Internal server error" });
   }
 };
